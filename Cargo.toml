@@ -8,8 +8,15 @@ repository = "https://github.com/burncloud/burncloud"
 authors = ["burncloud contributors"]
 
 [dependencies]
-burncloud-common = "0.1.0"
-burncloud-core = "0.1.0"
+burncloud-common = { path = "../burncloud/crates/common", version = "0.1.0" }
+# burncloud-core = { path = "../burncloud/crates/core" }
+burncloud-client-api = { path = "../burncloud-client-api", version = "0.1.2" }
+burncloud-client-dashboard = { path = "../burncloud-client-dashboard", version = "0.1.2" }
+burncloud-client-deploy = { path = "../burncloud-client-deploy", version = "0.1.2" }
+burncloud-client-models = { path = "../burncloud-client-models", version = "0.1.2" }
+burncloud-client-monitor = { path = "../burncloud-client-monitor", version = "0.1.2" }
+burncloud-client-settings = { path = "../burncloud-client-settings", version = "0.1.2" }
+burncloud-client-shared = { path = "../burncloud-client-shared", version = "0.1.2" }
 dioxus = { version = "0.6.3", features = ["desktop"] }
 dioxus-router = "0.6.3"
 tokio = { version = "1.0", features = ["full"] }
