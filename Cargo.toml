@@ -1,0 +1,16 @@
+[package]
+name = "burncloud-client"
+version = "0.1.2"
+edition = "2021"
+description = "Desktop GUI client application for BurnCloud AI model deployment platform"
+license = "MIT"
+repository = "https://github.com/burncloud/burncloud"
+authors = ["burncloud contributors"]
+
+[dependencies]
+burncloud-common = "0.1.0"
+burncloud-core = "0.1.0"
+dioxus = { version = "0.6.3", features = ["desktop"] }
+dioxus-router = "0.6.3"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
