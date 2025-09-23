@@ -10,6 +10,7 @@ use crate::pages::{
     api::ApiManagement,
     settings::SystemSettings,
 };
+use crate::tray::{start_tray, TrayMessage};
 
 #[derive(Clone, Routable, Debug, PartialEq)]
 pub enum Route {
@@ -42,7 +43,35 @@ pub fn App() -> Element {
 }
 
 pub fn launch_gui() {
-    std::thread::spawn(|| { let _ = burncloud_client_tray::start_tray(); });
+    launch_gui_impl();
+}
+
+pub fn launch_gui_with_tray() {
+    // 启动托盘
+    let tray_receiver = match start_tray() {
+        Ok(receiver) => receiver,
+        Err(e) => {
+            eprintln!("Failed to start tray: {}", e);
+            launch_gui_impl();
+            return;
+        }
+    };
+
+    // 在后台线程监听托盘消息
+    std::thread::spawn(move || {
+        for message in tray_receiver {
+            match message {
+                TrayMessage::ShowWindow => {
+                    // 这里可以添加显示窗口的逻辑
+                    println!("Tray requested to show window");
+                }
+                TrayMessage::Exit => {
+                    std::process::exit(0);
+                }
+            }
+        }
+    });
+
     launch_gui_impl();
 }
 
