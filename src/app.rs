@@ -42,6 +42,7 @@ pub fn App() -> Element {
 }
 
 pub fn launch_gui() {
+    std::thread::spawn(|| { let _ = burncloud_client_tray::start_tray(); });
     launch_gui_impl();
 }
 
