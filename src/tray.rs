@@ -1,7 +1,7 @@
 use systray::Application;
 use std::process;
 use std::fmt;
-use std::sync::mpsc;
+use std::sync::mpsc::Sender;
 
 #[derive(Debug)]
 pub struct SimpleError(String);
@@ -14,28 +14,20 @@ impl fmt::Display for SimpleError {
 
 impl std::error::Error for SimpleError {}
 
-#[derive(Debug)]
-pub enum TrayMessage {
-    ShowWindow,
-    Exit,
+#[derive(Debug, Clone)]
+pub enum WindowMessage {
+    Show,
+    Hide,
+}
+
+static WINDOW_SENDER: once_cell::sync::OnceCell<Sender<WindowMessage>> = once_cell::sync::OnceCell::new();
+
+pub fn set_window_sender(sender: Sender<WindowMessage>) {
+    let _ = WINDOW_SENDER.set(sender);
 }
 
 /// 启动 BurnCloud 托盘应用
-///
-/// 返回一个接收器，用于接收托盘消息
-pub fn start_tray() -> Result<mpsc::Receiver<TrayMessage>, Box<dyn std::error::Error>> {
-    let (sender, receiver) = mpsc::channel();
-
-    std::thread::spawn(move || {
-        if let Err(e) = run_tray(sender) {
-            eprintln!("Tray error: {}", e);
-        }
-    });
-
-    Ok(receiver)
-}
-
-fn run_tray(sender: mpsc::Sender<TrayMessage>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn start_tray() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = Application::new()?;
 
     // 直接使用 res/burncloud.ico 作为默认图标
@@ -45,15 +37,15 @@ fn run_tray(sender: mpsc::Sender<TrayMessage>) -> Result<(), Box<dyn std::error:
     match app.set_icon_from_file(&ico_path.to_string_lossy()) {
         Ok(_) => {},
         Err(_) => {
-            // 如果设置图标失败，尝试不设置图标或使用系统默认图标
             println!("Warning: Failed to set custom icon, using default");
         }
     }
 
     // 添加启动界面菜单项
-    let sender_clone = sender.clone();
-    app.add_menu_item(&"启动界面".to_string(), move |_| -> Result<(), SimpleError> {
-        let _ = sender_clone.send(TrayMessage::ShowWindow);
+    app.add_menu_item(&"显示界面".to_string(), move |_| -> Result<(), SimpleError> {
+        if let Some(sender) = WINDOW_SENDER.get() {
+            let _ = sender.send(WindowMessage::Show);
+        }
         Ok(())
     })?;
 
@@ -61,8 +53,7 @@ fn run_tray(sender: mpsc::Sender<TrayMessage>) -> Result<(), Box<dyn std::error:
     app.add_menu_separator()?;
 
     // 添加退出菜单项
-    app.add_menu_item(&"退出程序".to_string(), move |_| -> Result<(), SimpleError> {
-        let _ = sender.send(TrayMessage::Exit);
+    app.add_menu_item(&"退出程序".to_string(), |_| -> Result<(), SimpleError> {
         process::exit(0);
     })?;
 
