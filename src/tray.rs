@@ -1,7 +1,7 @@
 use systray::Application;
 use std::process;
 use std::fmt;
-use std::sync::mpsc::Sender;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug)]
 pub struct SimpleError(String);
@@ -14,16 +14,16 @@ impl fmt::Display for SimpleError {
 
 impl std::error::Error for SimpleError {}
 
-#[derive(Debug, Clone)]
-pub enum WindowMessage {
-    Show,
-    Hide,
+// 简单的原子标志
+static SHOULD_SHOW: AtomicBool = AtomicBool::new(false);
+static SHOULD_HIDE: AtomicBool = AtomicBool::new(false);
+
+pub fn should_show_window() -> bool {
+    SHOULD_SHOW.swap(false, Ordering::Relaxed)
 }
 
-static WINDOW_SENDER: once_cell::sync::OnceCell<Sender<WindowMessage>> = once_cell::sync::OnceCell::new();
-
-pub fn set_window_sender(sender: Sender<WindowMessage>) {
-    let _ = WINDOW_SENDER.set(sender);
+pub fn should_hide_window() -> bool {
+    SHOULD_HIDE.swap(false, Ordering::Relaxed)
 }
 
 /// 启动 BurnCloud 托盘应用
@@ -43,9 +43,13 @@ pub fn start_tray() -> Result<(), Box<dyn std::error::Error>> {
 
     // 添加启动界面菜单项
     app.add_menu_item(&"显示界面".to_string(), move |_| -> Result<(), SimpleError> {
-        if let Some(sender) = WINDOW_SENDER.get() {
-            let _ = sender.send(WindowMessage::Show);
-        }
+        SHOULD_SHOW.store(true, Ordering::Relaxed);
+        Ok(())
+    })?;
+
+    // 添加隐藏界面菜单项
+    app.add_menu_item(&"隐藏界面".to_string(), move |_| -> Result<(), SimpleError> {
+        SHOULD_HIDE.store(true, Ordering::Relaxed);
         Ok(())
     })?;
 
