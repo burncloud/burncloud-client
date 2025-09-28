@@ -10,7 +10,7 @@ use crate::pages::{
     api::ApiManagement,
     settings::SystemSettings,
 };
-use crate::tray::{should_show_window, should_hide_window};
+pub use burncloud_client_tray::{start_tray, should_show_window};
 
 #[derive(Clone, Routable, Debug, PartialEq)]
 pub enum Route {
@@ -43,7 +43,7 @@ pub fn App() -> Element {
 }
 
 pub fn launch_gui() {
-    launch_gui_impl();
+    launch_gui_with_tray();
 }
 
 pub fn launch_gui_with_tray() {
@@ -72,7 +72,7 @@ fn AppWithTray() -> Element {
 
         // 启动托盘应用在后台线程
         std::thread::spawn(move || {
-            if let Err(e) = crate::tray::start_tray() {
+            if let Err(e) = start_tray() {
                 eprintln!("Failed to start tray: {}", e);
             }
         });
@@ -91,11 +91,6 @@ fn AppWithTray() -> Element {
                     let _ = window_clone.set_visible(true);
                     let _ = window_clone.set_focus();
                 }
-
-                if should_hide_window() {
-                    // 隐藏窗口
-                    let _ = window_clone.set_visible(false);
-                }
             }
         });
     });
@@ -103,20 +98,4 @@ fn AppWithTray() -> Element {
     rsx! {
         Router::<Route> {}
     }
-}
-
-fn launch_gui_impl() {
-    use dioxus::desktop::{Config, WindowBuilder};
-
-    let window = WindowBuilder::new()
-        .with_title("BurnCloud - 大模型本地部署平台")
-        .with_inner_size(dioxus::desktop::LogicalSize::new(1200.0, 800.0))
-        .with_resizable(true)
-        .with_decorations(false);
-
-    let config = Config::new().with_window(window);
-
-    dioxus::LaunchBuilder::desktop()
-        .with_cfg(config)
-        .launch(App);
 }
