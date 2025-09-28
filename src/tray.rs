@@ -47,12 +47,6 @@ pub fn start_tray() -> Result<(), Box<dyn std::error::Error>> {
         Ok(())
     })?;
 
-    // 添加隐藏界面菜单项
-    app.add_menu_item(&"隐藏界面".to_string(), move |_| -> Result<(), SimpleError> {
-        SHOULD_HIDE.store(true, Ordering::Relaxed);
-        Ok(())
-    })?;
-
     // 添加分隔符
     app.add_menu_separator()?;
 
